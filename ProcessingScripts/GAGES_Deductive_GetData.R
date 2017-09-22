@@ -1,23 +1,30 @@
 ## GAGES_Deductive_GetData.R
 #' This is intended to extract the data necessary for deductive classification of
-#' the GAGES catchments modeled on the procedure described in Wolock et al. (2004).
+#' the GAGES catchments following various different procedures.
+#' 
 #' The data will then be saved as a CSV file.
 #' 
-#' It requires the following input variables:
+#' This script outputs the following variables:
 #'   -relief = (max elevation) - (min elevation) [m]
 #'   -flatland.overall = percent area with <= 1% slope [%]
 #'   -flatland.upland = percent of flatland.overall above mean watershed elevation [%]
 #'   -sand.prc = mean percent sand in soil [%]
 #'   -k.log = mean log permeability [m2]
-#'   -defc.mm = precipitation deficit = precipitation - PET [mm/yr]
+#'   -precip.mm = precipitation [mm/yr]
+#'   -pet.mm = potential ET [mm/yr]
+#'   -precip.winter = winter precipitation seasonality indicator
+#'   -precip.summer = summer precipitation seasonality indicator
 #'
-#' These correspond to the following columns in the New_catchments_v9.xlsx spreadsheed from Carolina.
+#' These correspond to the following columns in the New_catchments_v9.xlsx spreadsheed from Carolina Massmann.
 #'   -relief = elev_rge (DB_basins, from NED, 10 m resolution)
 #'   -flat.overall = NA
 #'   -flat.upland = NA
 #'   -sand.prc = sandtotal (DB_basins col 79, from SSURGO, weight percent of particles 0.5-2.0 mm in diameter)
 #'   -k.log = logk (DB_basins col 23, from Gleeson et al. 2011)
-#'   -defc.mm = pp_a - pet_a (DB_climate, cols 2 and 3)
+#'   -precip.mm = pp_a (DB_climate, col 2)
+#'   -pet.mm = pet_a (DB_climate, col 3)
+#'   -precip.winter = pp_11-02 (DB_climate, col 19) = (Nov to Feb precip)/((annual precip/12)*4)
+#'   -precip.summer = pp_06-08 (DB_climate, col 18) = (Jun to Aug precip)/((annual precip/12)*3)
 
 rm(list=ls())
 
@@ -53,7 +60,8 @@ db.basins <- read.csv(paste0(data.in.dir, "FromCarolina+Thorsten/DB_basins.csv")
 df.climate <- data.frame(basin = db.climate[,1],
                          precip.mm = db.climate[,2],
                          pet.mm = db.climate[,3],
-                         defc.mm = (db.climate[,2] - db.climate[,3]),
+                         precip.winter = db.climate[,19],
+                         precip.summer = db.climate[,18],
                          stringsAsFactors=F)
 
 df.basins <- data.frame(basin = db.basins[,2],
@@ -128,7 +136,7 @@ df.out$flat.up.n <- NULL
 df.out$n.land <- NULL
 
 ## 4) Save
-write.csv(df.out, paste0(data.dir, "data/GAGES_Deductive_GetData.csv"), row.names=F)
+write.csv(df.out, paste0(data.dir, "GAGES_Deductive_GetData.csv"), row.names=F)
 
 ## 5) Make some plots
 # read in data
