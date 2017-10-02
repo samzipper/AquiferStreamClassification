@@ -159,8 +159,3 @@ p.dens <-
   theme_bw() +
   theme(panel.grid=element_blank())
 ggsave(paste0(plot.dir, "GAGES_Deductive_GetData_p.dens.png"), p.dens, width=9, height=9, units="in")
-
-# inspect map data
-df.map <- shp.r@data
-df.map$basin <- as.numeric(levels(df.map$Basin_ID)[as.numeric(df.map$Basin_ID)])
-df.map <- left_join(df.map[,c("AREA", "basin")], df.out, by="basin")

@@ -1,6 +1,7 @@
 ## GAGES_Deductive_Classify.R
 #' This script loads output from GAGES_Deductive_GetData.R and classifies
-#' the catchments following the procedure of Wolock et al. (2004).
+#' the catchments following the procedure of Wolock et al. (2004) and 
+#' Leibowitz et al. (2016).
 
 rm(list=ls())
 
@@ -22,16 +23,6 @@ plot.dir <- "C:/Users/Sam/Dropbox/Work/HydrologicLandscapes/GAGES/plots/"
 
 # directory containing data from Carolina and Thorsten
 data.in.dir <- "C:/Users/Sam/Dropbox/Work/HydrologicLandscapes/GAGES/FromCarolina+Thorsten/"
-
-## script controls
-# list of variables to use for classification
-vars.classify <- c("sand.prc", "k.log", "defc.mm", "elev.m.range", "flat.overall", "flat.upland", "flat.lowland")
-
-# select the first n bands explaining this proportion of total variance:
-var.prc <- 0.8
-
-# number of output classes
-n.class <- 6
 
 ## load data from GAGES_Deductive_GetData.R
 # load data
@@ -56,6 +47,16 @@ df$dryness[df$precip.mm > df$pet.mm] <-
 
 
 # 1. Wolock et al. (2004) classification based on clustering --------------
+
+# list of variables to use for classification
+vars.classify <- c("sand.prc", "k.log", "defc.mm", "elev.m.range", "flat.overall", "flat.upland", "flat.lowland")
+
+# select the first n bands explaining this proportion of total variance:
+var.prc <- 0.8
+
+# number of output classes
+n.class <- 6
+
 # standardize input variables based on mean and sd
 vars.scale <- as.data.frame(apply(df[,vars.classify], 2, scale))
 
@@ -107,9 +108,11 @@ df$class.terrain[df$flat.overall > 50] <- "F"
 # overall classification
 df$class.Leibowitz <- factor(paste(df$class.climate, df$class.seasonality, df$class.perm, df$class.terrain, df$class.sand, sep="-"))
 
+# Save output -------------------------------------------------------------
+
+write.csv(df, paste0(data.dir, "GAGES_Deductive_Classify.csv"), row.names=F)
+
 # Make maps ---------------------------------------------------------------
-
-
 
 # load shapefile
 shp <- readOGR(dsn=paste0(data.in.dir, "shapefiles"), layer="basins_CONUS")
@@ -144,5 +147,21 @@ p.map.cluster <-
   ggplot() +
   geom_polygon(data=df.usa, aes(x=long, y=lat, group=group)) +
   geom_polygon(data=df.map, aes(x=long, y=lat, fill=factor(class.Wolock), group=basin)) +
+  scale_fill_discrete(name="Class") +
   theme_bw() +
-  theme(panel.grid=element_blank())
+  theme(panel.grid=element_blank(),
+        legend.position="bottom")
+ggsave(paste0(plot.dir, "GAGES_Deductive_Classify_p.map.cluster.png"),
+       p.map.cluster, width=8, height=6, units="in")
+
+# make plot of leibowitz
+p.map.leibowitz <-
+  ggplot() +
+  geom_polygon(data=df.usa, aes(x=long, y=lat, group=group)) +
+  geom_polygon(data=df.map, aes(x=long, y=lat, fill=factor(class.Leibowitz), group=basin)) +
+  scale_fill_discrete(name="Class") +
+  theme_bw() +
+  theme(panel.grid=element_blank(),
+        legend.position="bottom")
+ggsave(paste0(plot.dir, "GAGES_Deductive_Classify_p.map.leibowitz.png"),
+       p.map.leibowitz, width=8, height=8, units="in")
