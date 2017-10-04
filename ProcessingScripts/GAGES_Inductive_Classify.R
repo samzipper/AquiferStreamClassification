@@ -33,7 +33,7 @@ df <- df[complete.cases(df), ]
 # 1. classification based on k-means clustering (analagous to Wolock) --------------
 
 # list of variables to use for classification
-vars.classify <- c("BFI", "Q.mm_y", "Q90.mm_d", "Q10.mm_d", "FDC.slope", "flow.winter", "flow.summer")
+vars.classify <- c("BFI", "Q.mm_y", "Q90.mm_d", "Q10.mm_d", "FDC.slope", "Qs.range", "n.high.pulses")
 
 # select the first n bands explaining this proportion of total variance:
 var.prc <- 0.8
@@ -67,9 +67,9 @@ df.class.Q.kmeans <- summarize(group_by(df, class.Q.kmeans),
                                Q.mm_y.mean = mean(Q.mm_y),
                                Q90.mm_d.mean = mean(Q90.mm_d),
                                Q10.mm_d.mean = mean(Q10.mm_d),
+                               n.high.pulses.mean = mean(n.high.pulses),
                                FDC.slope.mean = mean(FDC.slope),
-                               flow.winter.mean = mean(flow.winter),
-                               flow.summer.mean = mean(flow.summer))
+                               Qs.range.mean = mean(Qs.range))
 
 # Save output -------------------------------------------------------------
 

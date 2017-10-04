@@ -10,8 +10,12 @@
 #'   -Q90.mm_d = 10th percentile, flow duration curve [mm/day] (exceeded 90% of days)
 #'   -Q10.mm_d = 90th percentile, flow duration curve [mm/day] (exceeded 10% of days)
 #'   -FDC.slope = slope of flow duration curve between 33=66 percentiles
-#'   -flow.winter = winter discharge seasonality indicator
-#'   -flow.summer = summer discharge seasonality indicator
+#'   -n.high.pulses = average annual number of high pulses (>Q25)
+#'   -Qs.MAM = spring seasonality indicator
+#'   -Qs.JJA = summer seasonality indicator
+#'   -Qs.SON = fall seasonality indicator
+#'   -Qs.DJF = winter seasonality indicator
+#'   -Qs.range = seasonality variability indicator
 #'
 #' These correspond to the following columns in the New_catchments_v9.xlsx spreadsheed from Carolina Massmann.
 #'   -BFI = BFI_df (DB_discharge, col 4)
@@ -19,8 +23,12 @@
 #'   -Q90.mm_d = FDC_010 (DB_discharge, col 97)
 #'   -Q10.mm_d = FDC_090 (DB_discharge, col 177)
 #'   -FDC.slope = sl_FSC (DB_discharge, col 700)
-#'   -flow.winter = Q_11-02 (DB_discharge, col 706)
-#'   -flow.summer = Q_06-08 (DB_discharge, col 705)
+#'   -n.high.pulses = lh_Nhi (DB_discharge, col 31)
+#'   -Qs.MAM = Qs_MAM (DB_discharge, col 710)
+#'   -Qs.JJA = Qs_JJA (DB_discharge, col 711)
+#'   -Qs.SON = Qs_SON (DB_discharge, col 712)
+#'   -Qs.DJF = Qs_DJF (DB_discharge, col 713)
+#'   -Qs.range = Qs_range (DB_discharge, col 714)
 
 rm(list=ls())
 
@@ -51,8 +59,12 @@ df.out <- data.frame(basin = db.discharge[,1],
                      Q90.mm_d = db.discharge[,97],
                      Q10.mm_d = db.discharge[,177],
                      FDC.slope = db.discharge[,700],
-                     flow.winter = db.discharge[,706],
-                     flow.summer = db.discharge[,705],
+                     n.high.pulses = db.discharge[,31],
+                     Qs.MAM = db.discharge[,710],
+                     Qs.JJA = db.discharge[,711],
+                     Qs.SON = db.discharge[,712],
+                     Qs.DJF = db.discharge[,713],
+                     Qs.range = db.discharge[,714],
                      stringsAsFactors=F)
 
 ## 4) Save
@@ -63,7 +75,7 @@ write.csv(df.out, paste0(data.dir, "GAGES_Inductive_GetData.csv"), row.names=F)
 df.out <- read.csv(paste0(data.dir, "GAGES_Inductive_GetData.csv"))
 
 # list of variables to plot
-vars.plot <- c("BFI", "Q.mm_y", "Q90.mm_d", "Q10.mm_d", "FDC.slope", "flow.winter", "flow.summer")
+vars.plot <- colnames(df.out)[colnames(df.out) != "basin"]
 
 # subset to plot variables only, plus basin number
 df.plot <- subset(df.out, select=c("basin", vars.plot))
