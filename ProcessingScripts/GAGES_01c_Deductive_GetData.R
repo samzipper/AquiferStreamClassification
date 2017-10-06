@@ -97,8 +97,8 @@ df.climate <- data.frame(basin = db.climate[,1],
 shp <- readOGR(dsn=paste0(data.in.dir, "FromCarolina+Thorsten/shapefiles"), layer="basins_CONUS")
 
 # read in DEM and slope rasters from HydroBASINS
-r.dem <- raster(paste0(GIS.dir, "DEM_15s/na_dem_15s.tif"))
-r.slope <- raster(paste0(GIS.dir, "slope_15s/na_slope_15s.tif"))
+r.dem <- raster(paste0(GIS.dir, "DEM_15s/global_dem_15s.vrt"))
+r.slope <- raster(paste0(GIS.dir, "slope_15s/global_slope_15s.vrt"))
 
 # reproject shapefile to match DEM
 shp.r <- spTransform(shp, crs(r.dem))
@@ -111,7 +111,7 @@ r.slope.s <- crop(r.slope, shp.r)
 df.cells <- extract(r.dem.s, shp.r, cellnumbers=T, df=T)
 
 # rename DEM column
-colnames(df.cells)[colnames(df.cells)=="na_dem_15s"] <- "elev.m"
+colnames(df.cells)[colnames(df.cells)=="global_dem_15s"] <- "elev.m"
 
 # extract elevations and slopes
 df.cells$slope.prc <- extract(r.slope.s, df.cells$cell)
@@ -277,6 +277,7 @@ df.out$dryness[df.out$precip.mm > df.out$pet.mm] <-
 
 # any columns with no flatland also set flatland.upland to 0
 df.out$flat.upland[df.out$n.flat.pts==0] <- 0
+df.out$flat.lowland[df.out$n.flat.pts==0] <- 0
 
 ## 4) Save
 write.csv(df.out, paste0(data.dir, "GAGES_Deductive_GetData.csv"), row.names=F)

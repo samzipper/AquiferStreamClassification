@@ -31,20 +31,6 @@ df <- read.csv(paste0(data.dir, "GAGES_Deductive_GetData.csv"))
 # trim to complete cases only
 df <- df[complete.cases(df), ]
 
-## calculate derived variables
-# precipitation deficit [mm] - used in Wolock et al
-df$defc.mm <- df$precip.mm - df$pet.mm
-
-# flatland in lowlands [%] - used in Wolock et al
-df$flat.lowland <- 100 - df$flat.upland
-
-# Feddema dryness index [-] - used by Leibowitz et al
-df$dryness <- NaN
-df$dryness[df$pet.mm > df$precip.mm] <- 
-  df$precip.mm[df$pet.mm > df$precip.mm]/df$pet.mm[df$pet.mm > df$precip.mm] - 1
-df$dryness[df$precip.mm > df$pet.mm] <- 
-  1 - df$pet.mm[df$precip.mm > df$pet.mm]/df$precip.mm[df$precip.mm > df$pet.mm]
-
 
 # 1. Wolock et al. (2004) classification based on clustering --------------
 
