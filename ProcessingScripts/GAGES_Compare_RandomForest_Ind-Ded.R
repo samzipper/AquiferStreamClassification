@@ -86,6 +86,10 @@ for (var.ind in vars.classify.ind){
   
 }
 
+# summarize for model fit
+df.var.ind.fit <- dplyr::summarize(group_by(df.var.all, var.ind),
+                                   r2 = mean(r2.mean))
+
 ## plots of variable importance
 # raster
 p.var.imp.raster <- 
@@ -113,6 +117,15 @@ p.var.imp.box <-
 ggsave(paste0(plot.dir, "GAGES_Compare_RandomForest_Ind-Ded.png"),
        arrangeGrob(p.var.imp.box, p.var.imp.raster, ncol=2),
        width=8, height=6, units="in")
+
+# plot of model fit
+p.var.ind.fit <- 
+  ggplot(df.var.ind.fit, aes(x=var.ind, y=r2)) +
+  geom_bar(stat="identity") +
+  scale_x_discrete(name="Inductive Variable") +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.grid=element_blank())
 
 # summarize by means
 df.var.ded <- dplyr::summarize(group_by(df.var.all, var.ded),

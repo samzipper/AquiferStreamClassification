@@ -35,10 +35,13 @@ df.ded <- read.csv(paste0(data.dir, "GAGES_Deductive_GetData.csv"), stringsAsFac
 df <- left_join(df.ind, df.ded, by="basin")
 df <- df[complete.cases(df), ]
 
+# clean up
+rm("df.ind", "df.ded")
+
 # Deductive classification, following Wolock --------------------------------------------------------
 
 # list of variables to use for classification
-vars.classify <- c("event.size.mm", "sand.top15cm.prc.mean", "elev.m.range", "flat.overall", "precip.cold", "porosity.mean", "logk.mean", "WTD.m.mean", "DTB.cm.mean", "dryness", "prc.lakes")
+vars.classify.ded <- c("event.size.mm", "sand.top15cm.prc.mean", "elev.m.range", "flat.overall", "precip.cold", "porosity.mean", "logk.mean", "WTD.m.mean", "DTB.cm.mean", "dryness", "prc.lakes")
 
 # select the first n bands explaining this proportion of total variance:
 var.prc <- 0.8
@@ -47,83 +50,85 @@ var.prc <- 0.8
 n.class <- 6
 
 # standardize input variables based on mean and sd
-vars.scale <- as.data.frame(apply(df[,vars.classify], 2, scale))
+vars.scale.ded <- as.data.frame(apply(df[,vars.classify.ded], 2, scale))
 
 # PCA transformation
-fmla <- as.formula(paste0("~ ", paste0(vars.classify, collapse="+")))
-PCA.fit <- prcomp(fmla, data=vars.scale, na.action=na.omit)
+fmla.ded <- as.formula(paste0("~ ", paste0(vars.classify.ded, collapse="+")))
+PCA.fit.ded <- prcomp(fmla.ded, data=vars.scale.ded, na.action=na.omit)
 
 # select PCs to retain
-PCA.retain <- min(which(summary(PCA.fit)$importance["Cumulative Proportion", ] >= var.prc))
+PCA.retain.ded <- min(which(summary(PCA.fit.ded)$importance["Cumulative Proportion", ] >= var.prc))
 
 # select PC output data
-PCs <- PCA.fit$x[,1:PCA.retain]
+PCs.ded <- PCA.fit.ded$x[,1:PCA.retain.ded]
+colnames(PCs.ded) <- paste0(colnames(PCs.ded), ".ded")
+df <- cbind(df, PCs.ded)
 
 # k-means clustering
 set.seed(1)
-fit.km <- kmeans(PCs, n.class)
+fit.km.ded <- kmeans(PCs.ded, n.class)
 
 # add results to input 
-df$class.ded <- fit.km$cluster
+df$class.ded <- fit.km.ded$cluster
 
 # summarize by cluster
 df.class.ded <- summarize(group_by(df, class.ded),
-                          sand.prc.mean = mean(sand.prc),
-                          k.log.mean = mean(k.log),
+                          sand.prc.mean = mean(sand.top15cm.prc.mean),
+                          k.log.mean = mean(logk.mean),
                           defc.mm.mean = mean(defc.mm),
                           elev.m.range.mean = mean(elev.m.range),
                           flat.overall.mean = mean(flat.overall),
                           flat.upland.mean = mean(flat.upland),
                           flat.lowland.mean = mean(flat.lowland))
 
-# Set up map data ---------------------------------------------------------------
+# Inductive classification ------------------------------------------------
 
-# load shapefile
-shp <- readOGR(dsn=paste0(data.in.dir, "shapefiles"), layer="basins_CONUS")
+# list of variables to use for classification
+vars.classify.ind <- c("BFI", "Q.mm_y", "Q90.mm_d", "Q10.mm_d", "FDC.slope", "Qs.range", "n.high.pulses")
 
-# subset to basins with data
-shp <- subset(shp, Basin_ID %in% df$basin)
+# standardize input variables based on mean and sd
+vars.scale.ind <- as.data.frame(apply(df[,vars.classify.ind], 2, scale))
 
-# reproject to WGS84
-shp <- spTransform(shp, CRS("+init=epsg:4326"))
+# PCA transformation
+fmla.ind <- as.formula(paste0("~ ", paste0(vars.classify.ind, collapse="+")))
+PCA.fit.ind <- prcomp(fmla.ind, data=vars.scale.ind, na.action=na.omit)
 
-# fortify to data frame
-shp@data$id <- rownames(shp@data)
-df.map <- tidy(shp)
-df.map <- left_join(df.map, shp@data, by="id")
-df.map$basin <- as.numeric(levels(df.map$Basin_ID)[as.numeric(df.map$Basin_ID)])
+# select PCs to retain
+PCA.retain.ind <- min(which(summary(PCA.fit.ind)$importance["Cumulative Proportion", ] >= var.prc))
 
-# get rid of junk columns
-df.map$test <- NULL
-df.map$test2 <- NULL
-df.map$Centroid <- NULL
-df.map$X_centroid <- NULL
-df.map$Y_centroid <- NULL
-
-# join with data frame
-df.map <- left_join(df.map, df, by="basin")
-
-# US outline
-df.usa <- map_data("usa")
-
+# select PC output data
+PCs.ind <- PCA.fit.ind$x[,1:PCA.retain.ind]
+colnames(PCs.ind) <- paste0(colnames(PCs.ind), ".ind")
+df <- cbind(df, PCs.ind)
 
 # Make plots --------------------------------------------------------------
 
-## map of deductive classification
-p.map.ded <-
-  ggplot() +
-  geom_polygon(data=df.usa, aes(x=long, y=lat, group=group)) +
-  geom_polygon(data=df.map, aes(x=long, y=lat, fill=factor(class.ded), group=basin)) +
-  scale_fill_discrete(name="Class") +
+# deductive PCs, grouped by deductive clusters
+p.scatter.PCs.ded <-
+  ggplot(df, aes(y=PC1.ded, x=PC2.ded)) +
+  geom_point(aes(color=factor(class.ded)), shape=21) +
+  geom_mark_hull(aes(fill=factor(class.ded), color=factor(class.ded)), expand=unit(0.5, "lines")) +
+  scale_fill_discrete(name="Deductive Class") +
+  scale_color_discrete(name="Deductive Class") +
   theme_bw() +
   theme(panel.grid=element_blank(),
         legend.position="bottom")
-ggsave(paste0(plot.dir, "GAGES_Compare_DeductiveInductive_p.map.ded.png"),
-       p.map.ded, width=8, height=6, units="in")
+
+# inductive PCs, grouped by deductive clusters
+p.scatter.PCs.ind <-
+  ggplot(df, aes(y=PC1.ind, x=PC2.ind)) +
+  geom_point(aes(color=factor(class.ded)), shape=21) +
+  geom_mark_hull(aes(fill=factor(class.ded), color=factor(class.ded)), expand=unit(0.5, "lines")) +
+  scale_fill_discrete(name="Deductive Class") +
+  scale_color_discrete(name="Deductive Class") +
+  theme_bw() +
+  theme(panel.grid=element_blank(),
+        legend.position="bottom")
+
+aov(class.ded ~ PC1.ind + PC2.ind, data=df)
 
 ## scatterplots within deductive classification to evaluate groups
-df.scatter.ded <- subset(df, select=c(vars.classify, "class.ded"))
-df.scatter.ded <- melt(df.scatter.ded, id=c("dryness", "class.ded"))
+df.scatter.ded <- melt(subset(df, select=c(vars.classify, "class.ded")), id=c("dryness", "class.ded"))
 
 p.scatter.dryness <-
   ggplot(df.scatter.ded, aes(y=dryness, x=value)) +
@@ -154,3 +159,46 @@ p.scatter.BFI <-
         legend.position="bottom")
 ggsave(paste0(plot.dir, "GAGES_Compare_DeductiveInductive_p.scatter.BFI.png"),
        p.scatter.BFI, width=8, height=6, units="in")
+
+
+## map of deductive classification
+
+# load shapefile
+shp <- readOGR(dsn=paste0(data.in.dir, "shapefiles"), layer="basins_CONUS")
+
+# subset to basins with data
+shp <- subset(shp, Basin_ID %in% df$basin)
+
+# reproject to WGS84
+shp <- spTransform(shp, CRS("+init=epsg:4326"))
+
+# fortify to data frame
+shp@data$id <- rownames(shp@data)
+df.map <- tidy(shp)
+df.map <- left_join(df.map, shp@data, by="id")
+df.map$basin <- as.numeric(levels(df.map$Basin_ID)[as.numeric(df.map$Basin_ID)])
+
+# get rid of junk columns
+df.map$test <- NULL
+df.map$test2 <- NULL
+df.map$Centroid <- NULL
+df.map$X_centroid <- NULL
+df.map$Y_centroid <- NULL
+
+# join with data frame
+df.map <- left_join(df.map, df, by="basin")
+
+# US outline
+df.usa <- map_data("usa")
+
+# plot
+p.map.ded <-
+  ggplot() +
+  geom_polygon(data=df.usa, aes(x=long, y=lat, group=group)) +
+  geom_polygon(data=df.map, aes(x=long, y=lat, fill=factor(class.ded), group=basin)) +
+  scale_fill_discrete(name="Class") +
+  theme_bw() +
+  theme(panel.grid=element_blank(),
+        legend.position="bottom")
+ggsave(paste0(plot.dir, "GAGES_Compare_DeductiveInductive_p.map.ded.png"),
+       p.map.ded, width=8, height=6, units="in")
