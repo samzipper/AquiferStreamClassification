@@ -1,4 +1,4 @@
-CAMELS
+CAMELS - Downloaded 2017-11-02
 
 This directory holds data for the CAMELS dataset, described here:
 https://www.hydrol-earth-syst-sci.net/21/5293/2017/ 
