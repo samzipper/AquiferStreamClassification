@@ -1,5 +1,4 @@
-# GAGES_Classification
+# AquiferStreamClassification
 
-This project is intended to compare deductive and inductive catchment classification techniques
-using the GAGES-II dataset. Most of the input data was compiled by Carolina Massmann, a postdoc
-in Thorsten Wagener's group at the University of Bristol.
+This project is intended to develop a classification system for aquifer-stream interactions
+which can be applied in North America (at least) or globally (at best).
