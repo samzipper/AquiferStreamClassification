@@ -10,10 +10,15 @@ require(rgdal)
 require(maptools)
 require(mapdata)
 require(gridExtra)
+require(stringr)
+require(lubridate)
+require(quantreg)
+require(zoo)
+require(hydrostats)
 
 ## paths
 # path to git repository
-dir.git <- "C:/Users/Sam/WorkGits/CONUS_CatchmentClassification/"
+dir.git <- "C:/Users/Sam/WorkGits/AquiferStreamClassification/"
 
 # path to Dropbox
 dir.drop <- "C:/Users/Sam/Dropbox/"
@@ -32,6 +37,9 @@ dir.GAGES <- "Z:/2.active_projects/Zipper/1.Spatial_data/regional/NorthAmerica/w
 
 # path to CANOPEX data on GSAS
 dir.CANOPEX <- "Z:/2.active_projects/Zipper/1.Spatial_data/regional/NorthAmerica/ws_watersheds/1original/CANOPEX/"
+
+# which CANOPEX data to use? NRCAN or ENVCAN
+data.CANOPEX <- "NRCAN"
 
 # path to save plots
 dir.plot <- paste0(dir.drop, "Work/HydrologicLandscapes/NorthAmerica/Plots/")

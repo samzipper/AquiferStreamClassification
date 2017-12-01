@@ -4,7 +4,7 @@
 
 rm(list=ls())
 
-source("C:/Users/Sam/WorkGits/CONUS_CatchmentClassification/ProcessingScripts/paths+packages.R")
+source("C:/Users/Sam/WorkGits/AquiferStreamClassification/ProcessingScripts/paths+packages.R")
 
 ## define selection criteria
 area.km2.max <- 5000   # max allowed basin area [km^2]
@@ -74,7 +74,7 @@ df.NNRW.merge <- subset(df.NNRW.merge, !(station %in% df.HCDN.merge$station))
 df.out <- rbind(df.CANOPEX.merge, df.HCDN.merge, df.NNRW.merge)
 
 ## save output dataset
-write.csv(df.out, paste0(dir.data, "NorthAmerica_01_SelectCatchments.csv"))
+write.csv(df.out, paste0(dir.data, "NorthAmerica_01_SelectCatchments.csv"), row.names=F)
 
 ## make some plots
 # histogram of catchment area
