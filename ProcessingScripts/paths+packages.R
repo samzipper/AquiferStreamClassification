@@ -76,16 +76,19 @@ abb2state <- function(name, convert = F, strict = F){
 }
 
 # function to gap-fill hydro data
-fillMissNoPlot <- function (dataset, block = 30, pmiss = 40, pmin = 365, model = "trend", smooth = TRUE, ...){
+fillMissNoPlot <- function (dataset, block = 30, pmin = 365, model = "trend", smooth = TRUE, ...){
   # this is based on the FillMiss script from waterData package but modified to:
   #  -not make a plot
   #  -get rid of long gaps but preserve data from before/after
+  #
+  # Inputs:
+  #  -dataset = 2 column data frame ("dates" and "val")
   pck <- is.na(dataset$val)
   
   # deal with gaps < length block
   pck.1s <- rep(1,length(pck))
   pck.1s[pck] <- NA
-  pck.1s <- as.numeric(na.approx(pck.1s, maxgap=block))
+  pck.1s <- as.numeric(na.approx(pck.1s, maxgap=block, na.rm=F))
   pck[pck.1s==1] <- F
   
   percent <- 0
@@ -101,42 +104,39 @@ fillMissNoPlot <- function (dataset, block = 30, pmiss = 40, pmin = 365, model =
     
     # figure out data to keep (length F >= pmin)
     rle.keep <- which(!values & lengths>pmin)
-    i.keep.end <- inds[rle.keep]
     i.keep.start <- inds[rle.keep-1]+1
+    i.keep.end <- inds[rle.keep]
     
-    # get indices to keep
-    start.flag <- T
-    for (i in 1:length(i.keep.start)){
-      keep <- seq(i.keep.start[i], i.keep.end[i], 1)
-      if (start.flag){
-        keep.all <- keep
-        start.flag <- F
-      } else {
-        keep.all <- c(keep.all, keep)
+    if (length(i.keep.start)>0){
+      # get indices to keep
+      start.flag <- T
+      for (i in 1:length(i.keep.start)){
+        keep <- seq(i.keep.start[i], i.keep.end[i], 1)
+        if (start.flag){
+          keep.all <- keep
+          start.flag <- F
+        } else {
+          keep.all <- c(keep.all, keep)
+        }
       }
+      
+      # subset dataset
+      dataset.keep <- dataset[keep.all, ]
+      
+      # get indices of missing data now
+      pck <- is.na(dataset.keep$val)
+      
+      # gap-fill
+      my.series <- window(dataset.keep$val)
+      my.struct <- StructTS(my.series, type = model)
+      if (smooth) {
+        fit <- tsSmooth(my.struct)
+      } else {
+        fit <- fitted(my.struct)
+      } 
+      dataset.keep$val[pck] <- fit[pck, 1]
+      dataset$val[keep.all] <- dataset.keep$val
     }
-    
-    # subset dataset
-    dataset <- dataset[keep.all, ]
-    
-    # get indices of missing data now
-    pck <- is.na(dataset$val)
-    
-    # gap-fill
-    my.series <- window(dataset$val)
-    my.struct <- StructTS(my.series, type = model)
-    if (smooth) {
-      fit <- tsSmooth(my.struct)
-    } else {
-      fit <- fitted(my.struct)
-    } 
-    dataset$val[pck] <- fit[pck, 1]
-    lng <- length(grep("fM", levels(dataset$qualcode)))
-    if (lng < 1) {
-      dataset$qualcode <- factor(dataset$qualcode, levels = c(levels(dataset$qualcode), 
-                                                              "fM"))
-    }
-    dataset$qualcode[pck] <- "fM"
   }
   dataset
 }
